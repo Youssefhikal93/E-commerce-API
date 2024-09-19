@@ -1,4 +1,5 @@
 export interface AuthRegiester {
+  id: number
   email: string
   password: string
   firstName: string

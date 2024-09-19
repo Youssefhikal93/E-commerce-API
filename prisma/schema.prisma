@@ -19,18 +19,39 @@ enum Role {
   SHOP
 }
 
+enum DiscountType {
+  PERCENT
+  VALUE
+}
+
+enum Status {
+  PENDING
+  DELIEVERD
+  CANCELLED
+}
+
 model User {
-  id        Int       @id @unique @default(autoincrement())
-  email     String    @db.VarChar(255)
-  password  String    @db.VarChar(255)
-  firstName String    @db.VarChar(255)
-  lastName  String    @db.VarChar(255)
-  role      Role      @default(USER)
-  avatar    String    @db.VarChar(255)
-  isActive  Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  products  Product[]
+  id                   Int        @id @unique @default(autoincrement())
+  email                String     @unique @db.VarChar(255)
+  password             String     @db.VarChar(255)
+  firstName            String     @db.VarChar(255)
+  lastName             String     @db.VarChar(255)
+  role                 Role       @default(USER)
+  avatar               String     @db.VarChar(255)
+  isActive             Boolean    @default(true)
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+  isBlocked            Boolean    @default(false)
+  loginAttempts        Int        @default(0)
+  lastLoginAttemps     DateTime?
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
+  wishlist             Wishlist[]
+  Product              Product[]
+  address              Address[]
+  Cart                 Cart?
+  orders               Order[]
+  coupoun              Coupon[]
 }
 
 model Category {
@@ -42,17 +63,125 @@ model Category {
 }
 
 model Product {
-  id               Int      @id @default(autoincrement())
-  name             String   @unique @db.VarChar(255)
+  id               Int              @id @default(autoincrement())
+  name             String           @unique @db.VarChar(255)
   longDescription  String
-  shortDescription String   @db.VarChar(255)
+  shortDescription String           @db.VarChar(255)
   quantity         Int
-  main_image       String?  @db.VarChar(255)
-  category         Category @relation(fields: [categoryId], references: [id])
+  main_image       String?          @db.VarChar(255)
+  category         Category         @relation(fields: [categoryId], references: [id])
   categoryId       Int
-  price            Decimal  @db.Decimal(10, 2)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @default(now()) @updatedAt
-  shop             User?    @relation(fields: [shopId], references: [id])
+  price            Float
+  // price            Decimal          @db.Decimal(10, 2)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @default(now()) @updatedAt
+  shop             User?            @relation(fields: [shopId], references: [id])
   shopId           Int?
+  productImages    ProductImages[]
+  ProductVariant   ProductVariant[]
+  wishlist         Wishlist[]
+  cartItems        CartItem[]
+  orderItems       OrderItem[]
+}
+
+model ProductImages {
+  id        Int     @id @default(autoincrement())
+  image     String  @db.VarChar(255)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId Int
+}
+
+model ProductVariant {
+  id                 Int                  @id @default(autoincrement())
+  name               String               @db.VarChar(255)
+  product            Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId          Int
+  ProductVariantItem ProductVariantItem[]
+}
+
+model ProductVariantItem {
+  id        Int            @id @default(autoincrement())
+  name      String         @db.VarChar(255)
+  product   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  variantId Int
+}
+
+model Wishlist {
+  productId Int
+  userId    Int
+  product   Product @relation(fields: [productId], references: [id])
+  user      User    @relation(fields: [userId], references: [id])
+
+  @@id([userId, productId])
+}
+
+model Address {
+  id         Int    @id @default(autoincrement())
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  street     String
+  country    String
+  province   String
+  postalCode Int
+
+  orders Order[]
+}
+
+model Cart {
+  id         Int        @id @default(autoincrement())
+  // totalPrice Decimal    @db.Decimal(10, 2)
+  totalPrice Float
+  userId     Int        @unique
+  user       User       @relation(fields: [userId], references: [id])
+  cartItems  CartItem[]
+}
+
+model CartItem {
+  id        Int     @id @default(autoincrement())
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cartId    Int
+  productId Int
+  variant   String? @db.Text
+  product   Product @relation(fields: [productId], references: [id])
+  // price     Decimal @db.Decimal(10, 2)
+  price     Float
+  quantity  Int     @default(1)
+}
+
+model Order {
+  id            Int     @id @default(autoincrement())
+  userId        Int?
+  user          User?   @relation(fields: [userId], references: [id])
+  totalPrice    Float
+  // totalPrice    Decimal  @db.Decimal(10, 2)
+  status        Status
+  addressId     Int
+  address       Address @relation(fields: [addressId], references: [id])
+  totalQuantity Int     @default(1)
+  couponCode    String?
+  coupon        Coupon? @relation(fields: [couponCode], references: [code])
+
+  orderItems OrderItem[]
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  variant   String? @db.Text
+  price     Float
+  quantity  Int     @default(1)
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderId   Int
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Coupon {
+  code          String       @id
+  discountPrice Int
+  discountType  DiscountType @default(PERCENT)
+  userId        Int
+
+  user User @relation(fields: [userId], references: [id])
+
+  Order Order[]
 }

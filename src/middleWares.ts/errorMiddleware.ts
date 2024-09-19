@@ -1,4 +1,4 @@
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
+import { PrismaClientKnownRequestError, PrismaClientValidationError } from '@prisma/client/runtime/library'
 import { NextFunction, Request, Response } from 'express'
 import { func } from 'joi'
 
@@ -87,6 +87,15 @@ class FormatErrorMsg {
 
       err = this.handelnonExixtingFkDB(err)
     }
+    if (err instanceof PrismaClientKnownRequestError && err.code == 'P2025') {
+
+      err = this.handelnotExisingIdDB(err)
+    }
+
+    if (err instanceof PrismaClientValidationError) {
+
+      err = this.DBErorrValidationErrorSChema(err)
+    }
 
 
     if (process.env.NODE_ENV === 'development') {
@@ -124,6 +133,12 @@ class FormatErrorMsg {
   }
   private handelnonExixtingFkDB(err: any) {
     return new BadRequestException(`invalid inputs:${err.meta.field_name} not exist`)
+  }
+  private handelnotExisingIdDB(err: any) {
+    return new BadRequestException(`invalid inputs:${err.meta.cause} not exist`)
+  }
+  private DBErorrValidationErrorSChema(err: any) {
+    return new BadRequestException(`invalid inputs:${err.message.split('Argument')[1]}`)
   }
 
 

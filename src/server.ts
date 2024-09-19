@@ -19,6 +19,7 @@ class Server {
 
   private setupMiddleware(): void {
     this.app.use(express.json())
+    this.app.use(express.static('images'))
 
   }
   private setupRoutes(): void {

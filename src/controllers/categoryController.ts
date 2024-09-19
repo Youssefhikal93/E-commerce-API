@@ -39,9 +39,7 @@ class CategoryController {
   }
 
   public async updateOne(req: Request, res: Response) {
-
     const id = parseAndValidateId(req)
-
 
     const category = await categoryService.editOne(id, req.body)
 

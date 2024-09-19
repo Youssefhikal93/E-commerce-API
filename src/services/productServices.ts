@@ -7,34 +7,43 @@ import { APIFeatures } from '~/utils/APIfeatuers'
 import { helper } from '~/utils/helpers'
 
 class ProductService {
-    public async add(RequestBody: ProductBody, loggedUser: UserPayLoad,
-
+    public async add(
+        RequestBody: ProductBody,
+        loggedUser: UserPayLoad,
         mainImage: Express.Multer.File | undefined
     ): Promise<Product> {
-        const { name, longDescription, shortDescription, quantity, categoryId, price,
-            //  main_image 
+        const {
+            name,
+            longDescription,
+            shortDescription,
+            quantity,
+            categoryId,
+            price
+            //  main_image
         } = RequestBody
-
 
         const product: Product = await prisma.product.create({
             data: {
-                name, longDescription, shortDescription, quantity: +quantity, categoryId: +categoryId, price: +price, shopId: loggedUser.id,
-                main_image: mainImage?.filename ? mainImage.filename : ""
+                name,
+                longDescription,
+                shortDescription,
+                quantity: +quantity,
+                categoryId: +categoryId,
+                price: +price,
+                shopId: loggedUser.id,
+                main_image: mainImage?.filename ? mainImage.filename : ''
                 // main_image
-
             }
         })
 
         return product
-
     }
 
     public async read(query: queryString): Promise<Product[]> {
-
         const apiFeatures = new APIFeatures(query)
         const products: Product[] = await prisma.product.findMany({
             where: apiFeatures.getWhereClause(),
-            ...apiFeatures.getPaginationOptions(),
+            ...apiFeatures.getPaginationOptions()
         })
 
         return products
@@ -45,7 +54,6 @@ class ProductService {
 
     //     const parsedPage = +page
     //     const parsedlimit = +limit
-
 
     //     if (isNaN(parsedPage) || parsedPage <= 0) {
     //         throw new BadRequestException(`Page:${parsedPage} must be a positive number`);
@@ -68,7 +76,6 @@ class ProductService {
     //     const stringFilterConditions = ['contains', 'startsWith', 'endsWith', 'equals', 'not'] as const;
     //     const numericFilterConditions = ['lt', 'lte', 'gt', 'gte', 'equals', 'not'] as const;
 
-
     //     if (filterCondition && filterBy) {
     //         const validStringFields = ['name', 'longDescription', 'shortDescription'];
     //         const validNumericFields = ['price', 'quantity', "categoryId"];
@@ -85,7 +92,6 @@ class ProductService {
     //         if (filterBy && !validFilterValueFields.includes(filterBy)) {
     //             throw new BadRequestException(`Invalid filterValue value: ${filterBy}. Valid options are '${validFilterValueFields.join(', ')}'`);
     //         }
-
 
     //     }
 
@@ -121,11 +127,18 @@ class ProductService {
     //     return products
     // }
 
-
     public async readOne(id: number) {
         const product: Product | null = await prisma.product.findFirst({
             where: {
                 id
+            },
+            include: {
+                productImages: true,
+                ProductVariant: {
+                    include: {
+                        ProductVariantItem: true
+                    }
+                }
             }
         })
 
@@ -135,8 +148,12 @@ class ProductService {
 
         return product
     }
-    public async editOne(id: number, requestBody: ProductBody, loggedUser: UserPayLoad, mainImage: Express.Multer.File): Promise<Product> {
-
+    public async editOne(
+        id: number,
+        requestBody: ProductBody,
+        loggedUser: UserPayLoad,
+        mainImage: Express.Multer.File
+    ): Promise<Product> {
         // const existingProduct = await prisma.product.findUnique({
         //     where: { id },
         // });
@@ -145,36 +162,34 @@ class ProductService {
         //     throw new NotfoundException(`Product with ID:${id} does not exist`);
         // }
 
-
         // if (existingProduct.shopId !== loggedUser.id && loggedUser.role !== 'ADMIN') {
         //     throw new UnauthorizedException('You are not permitted to update the current records')
         // }
-        const {
-            name,
-            longDescription,
-            shortDescription,
-            quantity,
-            main_image,
-            categoryId,
-            price,
-        } = requestBody;
+        const { name, longDescription, shortDescription, quantity, main_image, categoryId, price } = requestBody
 
         const existingProduct = await this.getProductById(id)
 
-        helper.checkPermisson(existingProduct, loggedUser)
+        // helper.checkPermisson(existingProduct, loggedUser)
+        helper.checkPermisson(existingProduct, 'shopId', loggedUser)
+
         const product: Product = await prisma.product.update({
             where: { id },
             data: {
-                name, longDescription, shortDescription, quantity: +quantity, main_image: mainImage.filename, categoryId: +categoryId, price: +price
+                name,
+                longDescription,
+                shortDescription,
+                quantity: +quantity,
+                main_image: mainImage.filename,
+                categoryId: +categoryId,
+                price: +price
             }
         })
         return product
     }
 
     public async remove(id: number, loggedUser: UserPayLoad): Promise<Product> {
-
         const existingProduct = await this.getProductById(id)
-        helper.checkPermisson(existingProduct, loggedUser)
+        helper.checkPermisson(existingProduct, 'shopId', loggedUser)
 
         const product: Product = await prisma.product.delete({ where: { id } })
 
@@ -190,24 +205,23 @@ class ProductService {
         const products = await prisma.product.findMany({
             where: {
                 shopId: loggedUser.id,
-                ...apiFeatures.getWhereClause(),
+                ...apiFeatures.getWhereClause()
             },
-            ...apiFeatures.getPaginationOptions(),
-        });
+            ...apiFeatures.getPaginationOptions()
+        })
         return products
     }
 
-    private async getProductById(id: number) {
+    public async getProductById(id: number) {
         const existingProduct = await prisma.product.findUnique({
-            where: { id },
-        });
+            where: { id }
+        })
 
         if (!existingProduct) {
-            throw new NotfoundException(`Product with ID:${id} does not exist`);
+            throw new NotfoundException(`Product with ID:${id} does not exist`)
         }
         return existingProduct
     }
-
 }
 
 export const productService: ProductService = new ProductService()

@@ -7,3 +7,8 @@ export const userSchemaCreate = Joi.object({
   lastName: Joi.string().required(),
   avatar: Joi.optional()
 })
+export const userSchemaUpdate = Joi.object({
+  firstName: Joi.string().required(),
+  lastName: Joi.string().required(),
+  avatar: Joi.optional()
+})
