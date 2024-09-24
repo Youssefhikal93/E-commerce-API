@@ -139,27 +139,7 @@ class UserService {
 
     }
 
-    public async generatePasswordResetToken(userId: number) {
-        // Create a reset token
-        const resetToken = crypto.randomBytes(32).toString('hex');
 
-        // Encrypt the token (hashed) to store it securely in the database
-        const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-
-        // Set token expiry (e.g., 10 minutes)
-        const tokenExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-        // Save the hashed token and expiration date to the user record in the database
-        await prisma.user.update({
-            where: { id: userId },
-            data: {
-                passwordResetToken: hashedToken,
-                passwordResetExpires: tokenExpiresAt,
-            },
-        });
-
-        return resetToken;
-    }
 
     public async updateAvatar(avatar: Express.Multer.File, loggedUser: UserPayLoad) {
         if (!avatar) {

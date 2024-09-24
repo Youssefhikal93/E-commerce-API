@@ -1,4 +1,5 @@
 import { Coupon, Product, User } from "@prisma/client";
+import { Response } from "express";
 import { UserPayLoad } from "~/interfaces/UserInterface";
 import { UnauthorizedException } from "~/middleWares.ts/errorMiddleware";
 

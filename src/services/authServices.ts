@@ -5,15 +5,16 @@ import { AuthLogin, AuthRegiester } from '~/interfaces/authServiceinterfaces'
 import bcrypt from 'bcrypt'
 import { BadRequestException, UnauthorizedException } from '~/middleWares.ts/errorMiddleware'
 import crypto from 'crypto'
+import { Email } from '~/utils/email'
+import { Request, Response } from 'express'
 
 
 class AuthService {
-  public async addUser(requestBody: AuthRegiester, avatar: Express.Multer.File) {
+  public async addUser(requestBody: AuthRegiester, avatar?: Express.Multer.File) {
     const { id, email, firstName, lastName, password } = requestBody
 
     const hasedPassword: string = await bcrypt.hash(password, 12)
 
-    const token: string = this.generateJwt({ id, email, firstName, lastName })
 
     const newUser: User = await prisma.user.create({
       data: {
@@ -21,16 +22,23 @@ class AuthService {
         password: hasedPassword,
         firstName,
         lastName,
-        avatar: avatar.filename
+        avatar: avatar ? avatar.filename : ''
       }
     })
+    const token: string = this.generateJwt({ id: newUser.id, email, firstName, lastName, role: newUser.role })
+
+
+
     return { newUser, token }
+    // return { newUser }
   }
   private generateJwt(payload: any) {
     return jwt.sign(payload, process.env.JWT_SECRET!, {
       expiresIn: process.env.JWT_EXPIRES_IN
     })
   }
+
+
 
   private async getUserByEmail(email: string) {
     return await prisma.user.findFirst({
@@ -88,7 +96,9 @@ class AuthService {
       where: { id: user.id },
       data: {
         loginAttempts: user.loginAttempts = 0,
-        lastLoginAttemps: new Date()
+        lastLoginAttemps: new Date(),
+        passwordResetExpires: null,
+        passwordResetToken: null
       }
     })
 
@@ -97,6 +107,82 @@ class AuthService {
     const paylaod = { email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role, id: user.id }
     const token: string = await this.generateJwt(paylaod)
     return token
+  }
+
+  public async generatePasswordResetToken(userId: number) {
+    // Create a reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+
+    // Encrypt the token (hashed) to store it securely in the database
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    // Set token expiry (e.g., 10 minutes)
+    const tokenExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    // Save the hashed token and expiration date to the user record in the database
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        passwordResetToken: hashedToken,
+        passwordResetExpires: tokenExpiresAt,
+      },
+    });
+
+    return resetToken;
+  }
+
+  public async forgetPassword(req: Request) {
+    const { email } = req.body;
+
+    // Find the user by email
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new BadRequestException('No user found with that email address.');
+    }
+
+    if (user.isBlocked) {
+      throw new UnauthorizedException('User is blocked , please contact our support team')
+    }
+
+    // Generate the reset token
+    const resetToken = await authService.generatePasswordResetToken(user.id);
+
+    // Send reset token via email (this is just a placeholder for actual email logic)
+    const resetURL = `${req.protocol}://${req.get('host')}/resetPassword/${resetToken}`;
+    // Send the resetURL to user's email in a real implementation
+
+    await new Email(user, resetURL).sendPasswordReset()
+  }
+
+  public async resetPassword(token: string, requestedBody: any) {
+    const { password } = requestedBody; // New password from form
+
+    // Hash the token again to match the one stored in the database
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find the user with this reset token and ensure the token hasn't expired
+    const user = await prisma.user.findFirst({
+      where: {
+        passwordResetToken: hashedToken,
+        passwordResetExpires: { gte: new Date() }, // Token must not be expired
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Token is invalid or has expired.');
+    }
+
+    // Hash the new password and save it to the user's record
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        passwordResetToken: null, // Clear the reset token
+        passwordResetExpires: null, // Clear the expiration date
+      },
+    });
   }
 
   private async blockUser(user: User) {

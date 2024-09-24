@@ -1,6 +1,7 @@
 import { PrismaClientKnownRequestError, PrismaClientValidationError } from '@prisma/client/runtime/library'
 import { NextFunction, Request, Response } from 'express'
 import { func } from 'joi'
+import { JsonWebTokenError } from 'jsonwebtoken'
 
 export abstract class CustomError extends Error {
   abstract status: string
@@ -97,6 +98,11 @@ class FormatErrorMsg {
       err = this.DBErorrValidationErrorSChema(err)
     }
 
+    if (err instanceof JsonWebTokenError) {
+      err = this.JWTInvalidtokenError(err)
+    }
+
+
 
     if (process.env.NODE_ENV === 'development') {
       this.sendErrorDev(err, res);
@@ -139,6 +145,9 @@ class FormatErrorMsg {
   }
   private DBErorrValidationErrorSChema(err: any) {
     return new BadRequestException(`invalid inputs:${err.message.split('Argument')[1]}`)
+  }
+  private JWTInvalidtokenError(err: any) {
+    return new BadRequestException(`invalid inputs:${err.message}:Token is Invalid or expired`)
   }
 
 

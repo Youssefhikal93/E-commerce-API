@@ -52,6 +52,7 @@ model User {
   Cart                 Cart?
   orders               Order[]
   coupoun              Coupon[]
+  reviews              Review[]
 }
 
 model Category {
@@ -82,6 +83,7 @@ model Product {
   wishlist         Wishlist[]
   cartItems        CartItem[]
   orderItems       OrderItem[]
+  reviews          Review[]
 }
 
 model ProductImages {
@@ -180,8 +182,21 @@ model Coupon {
   discountPrice Int
   discountType  DiscountType @default(PERCENT)
   userId        Int
+  createdAt     DateTime     @default(now())
 
   user User @relation(fields: [userId], references: [id])
 
   Order Order[]
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Float
+  comment   String   @db.Text
+  userId    Int
+  productId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }

@@ -23,6 +23,19 @@ class CouponController {
         })
     }
 
+    public async getAllCoupons(req: Request, res: Response) {
+        const coupons = await couponService.fetchAll(req.query)
+
+        return res.status(200).json({
+            status: 'sucsses',
+            results: coupons.length,
+            data: {
+                coupons
+            }
+        })
+    }
+
+
     public async deleteOne(req: Request, res: Response) {
 
 

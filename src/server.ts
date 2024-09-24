@@ -2,6 +2,7 @@ import express, { Application, NextFunction, Request, Response } from 'express'
 import 'dotenv/config'
 import appRoutes from './routes/appRoutes'
 import { BadRequestException, CustomError, NotfoundException, formatErrorMsg } from './middleWares.ts/errorMiddleware'
+import cookieParser from 'cookie-parser'
 
 
 class Server {
@@ -20,6 +21,7 @@ class Server {
   private setupMiddleware(): void {
     this.app.use(express.json())
     this.app.use(express.static('images'))
+    this.app.use(cookieParser())
 
   }
   private setupRoutes(): void {

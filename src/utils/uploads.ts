@@ -1,6 +1,7 @@
 import multer from "multer"
 import path from 'path';
 import fs from 'fs'
+import { BadRequestException } from "~/middleWares.ts/errorMiddleware";
 
 
 function createStorage(outDir: string) {
@@ -22,7 +23,7 @@ function createStorage(outDir: string) {
 
 export const upload = multer({
     storage: createStorage('products'),
-    limits: { fileSize: 1000000 },
+    limits: { fileSize: 100000 },
     fileFilter: (req, file, cb) => {
         checkFileType(file, cb);
     },
@@ -30,7 +31,7 @@ export const upload = multer({
 
 export const uploadAvatar = multer({
     storage: createStorage('users'),
-    limits: { fileSize: 1000000 },
+    limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         checkFileType(file, cb);
     },
@@ -47,10 +48,11 @@ function checkFileType(file: Express.Multer.File, cb: multer.FileFilterCallback)
     const filetypes = /jpeg|jpg|png|gif/;
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = filetypes.test(file.mimetype);
+    // const mimetype = file.mimetype.startsWith('/image');
 
     if (mimetype && extname) {
         return cb(null, true);
     } else {
-        cb(new Error('Images Only!'));
+        cb(new BadRequestException('Images Only!'));
     }
 }

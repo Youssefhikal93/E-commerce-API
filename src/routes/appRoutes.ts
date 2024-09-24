@@ -1,4 +1,4 @@
-import { Application, NextFunction, Request, Response } from 'express'
+import { Application } from 'express'
 import userRouter from './userRoute'
 import categoryRoute from './CategoryRoute'
 import productRoute from './productRoutes'
@@ -10,6 +10,8 @@ import addressRoute from './addressRoute'
 import cartRoute from './cartRoutes'
 import orderRoute from './orderRoutes'
 import couponRoute from './couponRoute'
+import reviewRoute from './reviewRoutes'
+import dashboardRoute from './dashboardroute'
 
 const appRoutes = (app: Application) => {
   app.use('/api/v1/users', userRouter)
@@ -23,6 +25,8 @@ const appRoutes = (app: Application) => {
   app.use('/api/v1/carts', cartRoute)
   app.use('/api/v1/orders', orderRoute)
   app.use('/api/v1/coupons', couponRoute)
+  app.use('/api/v1/reviews', reviewRoute)
+  app.use('/api/v1/dashboard', dashboardRoute)
 }
 
 export default appRoutes

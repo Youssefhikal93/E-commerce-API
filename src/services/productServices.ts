@@ -5,6 +5,13 @@ import { BadRequestException, NotfoundException, UnauthorizedException } from '~
 import { prisma } from '~/prisma'
 import { APIFeatures } from '~/utils/APIfeatuers'
 import { helper } from '~/utils/helpers'
+import RedisCache from './redis.cache'
+import { Redis_Keys } from '~/utils/redis.keys'
+import { productCache } from '~/utils/productsCach'
+
+
+const redisCache: RedisCache = new RedisCache()
+
 
 class ProductService {
     public async add(
@@ -36,15 +43,29 @@ class ProductService {
             }
         })
 
+        await productCache.invalidateProducts()
+
         return product
     }
 
     public async read(query: queryString): Promise<Product[]> {
+
+
+
         const apiFeatures = new APIFeatures(query)
+
+        const cacheKey = `products:${JSON.stringify(apiFeatures.getWhereClause())}:${apiFeatures.getPaginationOptions().skip}:${apiFeatures.getPaginationOptions().take}`
+
+        await productCache.getCach(cacheKey)
+
+
+
         const products: Product[] = await prisma.product.findMany({
             where: apiFeatures.getWhereClause(),
             ...apiFeatures.getPaginationOptions()
         })
+
+        await productCache.saveCach(cacheKey)
 
         return products
     }
@@ -128,6 +149,9 @@ class ProductService {
     // }
 
     public async readOne(id: number) {
+
+        await productCache.getCachForOneProduct(`${Redis_Keys.PRODUCTS}:${id}`)
+
         const product: Product | null = await prisma.product.findFirst({
             where: {
                 id
@@ -145,6 +169,8 @@ class ProductService {
         if (!product) {
             throw new NotfoundException(`Product with Id:${id} not found`)
         }
+
+        await productCache.saveCachForOneProduct(`${Redis_Keys.PRODUCTS}:${id}`, product)
 
         return product
     }
@@ -184,6 +210,8 @@ class ProductService {
                 price: +price
             }
         })
+        await productCache.invalidateProducts()
+
         return product
     }
 
@@ -196,12 +224,18 @@ class ProductService {
         if (!product) {
             throw new NotfoundException(`Product with ID:${id} not found`)
         }
+        await productCache.invalidateProducts()
 
         return product
     }
 
     public async readMyproducts(loggedUser: UserPayLoad, query: queryString) {
         const apiFeatures = new APIFeatures(query)
+
+        const cacheKey = `products:${JSON.stringify(apiFeatures.getWhereClause())}:${apiFeatures.getPaginationOptions().skip}:${apiFeatures.getPaginationOptions().take}`
+
+        await productCache.getCach(cacheKey)
+
         const products = await prisma.product.findMany({
             where: {
                 shopId: loggedUser.id,
@@ -209,6 +243,9 @@ class ProductService {
             },
             ...apiFeatures.getPaginationOptions()
         })
+
+        await productCache.saveCach(cacheKey)
+
         return products
     }
 

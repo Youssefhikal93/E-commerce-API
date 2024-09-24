@@ -10,7 +10,10 @@ export async function verfiyUser(req: Request, res: Response, next: NextFunction
   let token
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1]
+  } else if (req.cookies.token) {
+    token = req.cookies.token
   }
+
   if (!token) {
     throw new BadRequestException('Please login to grant the accses')
   }

@@ -3,9 +3,10 @@ import { prisma } from "~/prisma"
 import { userService } from "./userService"
 import { helper } from "~/utils/helpers"
 import { NotfoundException } from "~/middleWares.ts/errorMiddleware"
+import { CouponBody } from "~/interfaces/couponInterface"
 
 class CouponService {
-    public async addCoupon(requestedBody: any, loggedUser: UserPayLoad) {
+    public async addCoupon(requestedBody: CouponBody, loggedUser: UserPayLoad) {
         const { discountType, discountPrice, code } = requestedBody
 
         const newCoupon = await prisma.coupon.create({
@@ -19,15 +20,36 @@ class CouponService {
         return newCoupon
     }
     public async fetch(loggedUser: UserPayLoad) {
-        const addresses = await prisma.coupon.findMany({
+        const coupons = await prisma.coupon.findMany({
             where: {
                 userId: loggedUser.id
             }
         })
-        return addresses
+        return coupons
     }
 
+    public async fetchAll(query: any) {
+        const { filterBy, filterValue, filterCondition } = query
+        const whereClause: any = {}
+        if (filterBy && filterCondition && filterValue) {
+            if (filterBy === 'discountPrice' || filterBy === 'createdAt') {
 
+                whereClause[filterBy] = {
+                    [filterCondition]: query.filterValue,
+                }
+            } else {
+                whereClause[filterBy] = {
+                    [filterCondition]: query.filterValue,
+                    mode: 'insensitive'
+
+                }
+            };
+        }
+        const coupons = await prisma.coupon.findMany({
+            where: whereClause
+        })
+        return coupons
+    }
 
     public async remove(couponeCode: string, loggedUser: UserPayLoad) {
 

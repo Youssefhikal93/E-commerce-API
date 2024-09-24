@@ -6,10 +6,11 @@ import { couponService } from "./coupounService";
 import { BadRequestException, NotfoundException, UnauthorizedException } from "~/middleWares.ts/errorMiddleware";
 import { helper } from "~/utils/helpers";
 import { not } from "joi";
+import { OrderBodyCreation, OrderBodyUpdate } from "~/interfaces/orderInterface";
 
 class OrderService {
 
-    public async addOrder(requestedBody: any, loggedUser: UserPayLoad) {
+    public async addOrder(requestedBody: OrderBodyCreation, loggedUser: UserPayLoad) {
 
         //create order based on the created cart
         const myCart = await prisma.cart.findFirst({
@@ -40,10 +41,10 @@ class OrderService {
             }
         }
 
+        // make sure the address for the user belongs to the same user
         const addresses: Address[] | null = await prisma.address.findMany({
             where: { userId: loggedUser.id }
         })
-
 
         const isValidAddress = addresses.some((oneAddress) => oneAddress.id === addressId);
 
@@ -51,6 +52,7 @@ class OrderService {
             throw new NotfoundException("The provided addressId does not match any of the addresses associated with your profile.");
         }
 
+        //create order
         const newOrder = await prisma.order.create({
             data: {
                 addressId,
@@ -102,7 +104,7 @@ class OrderService {
         return finalOrder
     }
 
-    public async edit(orderId: number, requestedBody: any, loggedUser: UserPayLoad) {
+    public async edit(orderId: number, requestedBody: OrderBodyUpdate, loggedUser: UserPayLoad) {
 
         const { status } = requestedBody
 
