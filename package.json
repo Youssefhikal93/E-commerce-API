@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "set NODE_ENV=development&& npx nodemon",
     "prod": "set NODE_ENV=production&& npx nodemon",
-    "build": "tsc",
+    "build": "rimraf ./dist && tsc && tsc-alias",
     "start": "node dist/index.js",
     "debug": "ndb index.ts",
     "lint": "eslint .",
