@@ -1,5 +1,6 @@
 import { User } from "@prisma/client";
 import nodemailer from "nodemailer";
+import { UserPayLoad } from "~/interfaces/UserInterface";
 
 
 export class Email {
@@ -77,5 +78,24 @@ export class Email {
             `your password reset token is valid for 10 mins `,
         );
     }
+
+    public async sendPasswordResetTempPassword(userTempPassword: User) {
+        const html = `
+        <div>
+            <p>Hi ${this.firstName},</p>
+            <p>You requested a password reset.
+            Your temporary password is ${userTempPassword.passwordResetToken} Click the link below to reset your password. This link is valid for 10 minutes.
+            Click below to enter your new password :) </p>
+            <a href="${this.url}">Reset Password</a>
+        </div>
+    `;
+
+        await this.send(
+            html,
+            `your password reset token is valid for 10 mins `,
+        );
+    }
+
+
 }
 

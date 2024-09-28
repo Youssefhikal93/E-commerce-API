@@ -14,6 +14,9 @@ const userRouter = express.Router()
 userRouter.post('/forgotPassword', authController.forgotPassword);
 userRouter.patch('/resetPassword/:token', authController.resetPassword);
 
+userRouter.post('/forgotPasswordTempPassword', authController.forgotPasswordByTempPassword)
+userRouter.patch('/resetPasswordTempPassword', authController.resetPasswordByTempPassword);
+
 userRouter.post('/signup',
   uploadAvatar.single('avatar'),
   validateSchema(userSchemaCreate),

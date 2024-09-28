@@ -4,15 +4,13 @@ import { prisma } from "~/prisma";
 import bcrypt from 'bcrypt'
 import { changePasswordBody, UserBody, UserPayLoad } from "~/interfaces/UserInterface";
 import { helper } from "~/utils/helpers";
-import { authService } from "./authServices";
 import { BadRequestException, NotfoundException } from "~/middleWares.ts/errorMiddleware";
-import crypto from 'crypto'
-import { Multer } from "multer";
+
 
 class UserService {
     public async addUserByAdmin(requestedBody: AuthRegiester) {
 
-        const { email, firstName, lastName, avatar, password } = requestedBody
+        const { email, firstName, lastName, password } = requestedBody
 
         const hashedPassword = await bcrypt.hash(password, 10)
 
@@ -22,7 +20,7 @@ class UserService {
                 password: hashedPassword,
                 firstName,
                 lastName,
-                avatar
+                avatar :requestedBody.avatar || ""
             }
         })
         return newUser

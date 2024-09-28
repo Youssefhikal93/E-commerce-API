@@ -3,7 +3,7 @@ import { prisma } from '~/prisma'
 import jwt from 'jsonwebtoken'
 import { AuthLogin, AuthRegiester } from '~/interfaces/authServiceinterfaces'
 import bcrypt from 'bcrypt'
-import { BadRequestException, UnauthorizedException } from '~/middleWares.ts/errorMiddleware'
+import { BadRequestException, NotfoundException, UnauthorizedException } from '~/middleWares.ts/errorMiddleware'
 import crypto from 'crypto'
 import { Email } from '~/utils/email'
 import { Request, Response } from 'express'
@@ -147,10 +147,10 @@ class AuthService {
     // Generate the reset token
     const resetToken = await authService.generatePasswordResetToken(user.id);
 
-    // Send reset token via email (this is just a placeholder for actual email logic)
+    // URL
     const resetURL = `${req.protocol}://${req.get('host')}/resetPassword/${resetToken}`;
-    // Send the resetURL to user's email in a real implementation
 
+    // Send the resetURL to user's email in a real implementation
     await new Email(user, resetURL).sendPasswordReset()
   }
 
@@ -185,6 +185,67 @@ class AuthService {
     });
   }
 
+  public async forgetPasswordByTempPassword(req: Request) {
+    const { email } = req.body;
+
+    // Find the user by email
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new BadRequestException('No user found with that email address.');
+    }
+
+    if (user.isBlocked) {
+      throw new UnauthorizedException('User is blocked , please contact our support team')
+    }
+
+    // Generate the reset token
+    const TempPassword = crypto.randomBytes(8).toString('hex')
+    const tokenExpiresAt = new Date(Date.now() + 10 * 60 * 1000)
+
+
+    // update currentPassword with the temp password 
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordResetToken: TempPassword,
+        passwordResetExpires: tokenExpiresAt
+      }
+    })
+
+    // Send reset token via email (this is just a placeholder for actual email logic)
+    const resetURL = `${req.protocol}://${req.get('host')}/resetPassword`;
+
+    // Send the resetURL to user's email in a real implementation
+    await new Email(user, resetURL).sendPasswordResetTempPassword(user)
+  }
+
+  public async resetPasswordByTempPassword(requestedBody: any) {
+    const { tempPassword, newPassword, confirmNewPassword } = requestedBody; // New password from form
+
+    const user = await prisma.user.findFirst({ where: { passwordResetToken: tempPassword } });
+    if (!user) throw new NotfoundException('Password Reset Code Invalid');
+
+    if (user.passwordResetExpires! < new Date(Date.now())) {
+      throw new BadRequestException('Password Reset Code already expired, please forgot again!');
+    }
+
+    if (newPassword !== confirmNewPassword) throw new BadRequestException('Password and confirm new password must be the same!');
+
+    // Find the user with this reset token and ensure the token hasn't expired
+    const hashedPassword: string = await bcrypt.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { id: user.id }, data: {
+        password: hashedPassword,
+        passwordResetToken: null,
+        passwordResetExpires: null
+      }
+    })
+
+
+  }
+
+
   private async blockUser(user: User) {
     await prisma.user.update({
       where: { id: user.id },
@@ -193,6 +254,8 @@ class AuthService {
       }
     })
   }
+
+
 
 
 

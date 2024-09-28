@@ -4,7 +4,7 @@ export interface AuthRegiester {
   password: string
   firstName: string
   lastName: string
-  avatar: string
+  avatar?: string
 }
 
 export interface AuthLogin {

@@ -1,13 +1,7 @@
-import { User } from '@prisma/client'
-import { prisma } from '../prisma'
+
 import { NextFunction, Request, RequestHandler, Response } from 'express'
 import { authService } from '~/services/authServices'
-import { BadRequestException, UnauthorizedException } from '~/middleWares.ts/errorMiddleware'
-import bcrypt from 'bcrypt';
-import crypto from 'crypto'
-
 import { Email } from '~/utils/email'
-import { fail } from 'assert'
 import { sendCookie } from '~/utils/sendToken'
 
 class AuthController {
@@ -79,6 +73,23 @@ class AuthController {
       message: 'Password reset successful!',
     });
   }
+
+  public async forgotPasswordByTempPassword(req: Request, res: Response) {
+    await authService.forgetPasswordByTempPassword(req)
+    res.status(200).json({
+      status: 'success',
+      message: 'Temp password was sent to your email!',
+    });
+  }
+  public async resetPasswordByTempPassword(req: Request, res: Response) {
+    await authService.resetPasswordByTempPassword(req.body)
+
+    res.status(201).json({
+      status: 'success',
+      message: 'Your password updated sucssesfully',
+    });
+  }
+
 
 }
 
