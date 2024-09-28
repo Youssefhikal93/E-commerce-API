@@ -205,7 +205,7 @@ class ProductService {
                 longDescription,
                 shortDescription,
                 quantity: +quantity,
-                main_image: mainImage.filename,
+                main_image: mainImage.filename || existingProduct.main_image,
                 categoryId: +categoryId,
                 price: +price
             }

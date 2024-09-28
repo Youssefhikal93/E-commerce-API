@@ -202,28 +202,31 @@ class AuthService {
     const TempPassword = crypto.randomBytes(8).toString('hex')
     const tokenExpiresAt = new Date(Date.now() + 10 * 60 * 1000)
 
+    const hashedTempPassword = crypto.createHash('sha256').update(TempPassword).digest('hex')
 
     // update currentPassword with the temp password 
-    await prisma.user.update({
+    const existingUser = await prisma.user.update({
       where: { id: user.id },
       data: {
-        passwordResetToken: TempPassword,
+        passwordResetToken: hashedTempPassword,
         passwordResetExpires: tokenExpiresAt
       }
     })
 
-    // Send reset token via email (this is just a placeholder for actual email logic)
+    // URL containg the temp password
     const resetURL = `${req.protocol}://${req.get('host')}/resetPassword`;
 
     // Send the resetURL to user's email in a real implementation
-    await new Email(user, resetURL).sendPasswordResetTempPassword(user)
+    await new Email(user, resetURL).sendPasswordResetTempPassword(existingUser)
   }
 
   public async resetPasswordByTempPassword(requestedBody: any) {
     const { tempPassword, newPassword, confirmNewPassword } = requestedBody; // New password from form
 
-    const user = await prisma.user.findFirst({ where: { passwordResetToken: tempPassword } });
-    if (!user) throw new NotfoundException('Password Reset Code Invalid');
+    const hashedTempPassword = crypto.createHash('sha256').update(tempPassword).digest('hex');
+
+    const user = await prisma.user.findFirst({ where: { passwordResetToken: hashedTempPassword } });
+    if (!user) throw new NotfoundException('Temp Password Reset Code Invalid');
 
     if (user.passwordResetExpires! < new Date(Date.now())) {
       throw new BadRequestException('Password Reset Code already expired, please forgot again!');

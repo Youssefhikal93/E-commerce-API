@@ -113,7 +113,7 @@ class OrderService {
         const existingOrder = await this.getOrderId(orderId)
 
         if (existingOrder.status !== 'PENDING') {
-            throw new BadRequestException("Status dosn't support any modification of the order")
+            throw new BadRequestException("Status dosn't support any modification of the order , status should be between the following values (PENDING, DELIEVERD, CANCELLED")
         }
 
 
