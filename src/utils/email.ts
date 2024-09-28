@@ -79,12 +79,12 @@ export class Email {
         );
     }
 
-    public async sendPasswordResetTempPassword(userTempPassword: User) {
+    public async sendPasswordResetTempPassword(tempPassword: string) {
         const html = `
         <div>
             <p>Hi ${this.firstName},</p>
             <p>You requested a password reset.
-            Your temporary password is ${userTempPassword.passwordResetToken} Click the link below to reset your password. This link is valid for 10 minutes.
+            Your temporary password is ${tempPassword} Click the link below to reset your password. This link is valid for 10 minutes.
             Click below to enter your new password :) </p>
             <a href="${this.url}">Reset Password</a>
         </div>

@@ -217,7 +217,7 @@ class AuthService {
     const resetURL = `${req.protocol}://${req.get('host')}/resetPassword`;
 
     // Send the resetURL to user's email in a real implementation
-    await new Email(user, resetURL).sendPasswordResetTempPassword(existingUser)
+    await new Email(user, resetURL).sendPasswordResetTempPassword(TempPassword)
   }
 
   public async resetPasswordByTempPassword(requestedBody: any) {
