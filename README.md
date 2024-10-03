@@ -5,9 +5,6 @@ This project is a fully functional eCommerce application built using Node.js, Ty
 - [Features](#features)
 - [Technologies Used](#technologies-used)
 - [Installation](#installation)
-- [Usage](#usage)
-- [API Endpoints](#api-endpoints)
-- [License](#license)
 
 ## Features
 - User authentication (sign up, login, password reset)
@@ -22,9 +19,35 @@ This project is a fully functional eCommerce application built using Node.js, Ty
 - Express.js
 - Postgresql
 - Prisma
-- Redis (if applicable)
+- Redis
 
 ## Installation
 1. Clone the repository:
    ```bash
    git clone https://github.com/Youssefhikal93/E-commerce-API.git
+
+2. Install Redis
+docker pull redis
+
+### Run Redis Server
+docker run --name my-redis -d -p 6380:6379 redis
+
+### Open the redis cli command
+docker exec -it my-redis redis-cli
+
+### Check running redis
+docker ps
+
+2. Connect to Postgresql or any other sql database supported with prisma
+   ### use .env to replace your URL string (DATABASE_URL)
+
+3. install the dependencies 
+   ```bash 
+   npm install
+
+4. start the server 
+   ```bash 
+   npm run dev
+
+# Note
+All env varibales must be declared to be able to run the app on your local host. 
