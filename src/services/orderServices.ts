@@ -108,7 +108,11 @@ class OrderService {
 
         const { status } = requestedBody
 
+const validStatus = ["DELIVERED", "CANCELLED"]
 
+        if (!validStatus.includes(status)) {
+            throw new BadRequestException(`Status must be one of ${validStatus.join(",")} `)
+        }
 
         const existingOrder = await this.getOrderId(orderId)
 
