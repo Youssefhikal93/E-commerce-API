@@ -29,6 +29,10 @@ class CartServices {
         const selectedProduct = await productService.getProductById(productId)
         // console.log(cart)
 
+       if (selectedProduct.quantity < quantity) {
+            throw new BadRequestException(`Not enough stock available max quantity can be orderd is ${selectedProduct.quantity}`);
+        }
+
 
         const existingProductInCart = cart?.cartItems?.find((item: any) => item.productId === productId)
 
@@ -59,6 +63,15 @@ class CartServices {
 
         }
 
+
+         //update Product Quantity 
+        await prisma.product.update({
+            where: { id: productId },
+            data: {
+                quantity: selectedProduct.quantity - quantity
+            }
+        });
+      
         const updatedTotalPrice = cart.totalPrice + (cartItem.price * cartItem.quantity);
 
         // const updatedTotalPrice = cart.totalPrice.add(cartItem.price.mul(new Decimal(cartItem.quantity)));
